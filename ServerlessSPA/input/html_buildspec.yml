@@ -1,0 +1,16 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      nodejs: 10
+    commands:
+      - echo Build started on `date`
+      - echo Installing packages
+      - apt-get update && apt-get install zip -y
+  post_build:
+    commands:
+      - echo Creating build artifact
+      - zip -r deploy.zip html/
+artifacts:
+  files:
+    - deploy.zip

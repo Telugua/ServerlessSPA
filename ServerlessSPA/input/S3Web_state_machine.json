@@ -1,0 +1,81 @@
+{
+    "StartAt": "StoreParameters",
+    "States": {
+  "StoreParameters": {
+    "Type": "Task",
+    "Resource": "arn:aws:lambda:us-east-1:514712703977:function:S3Web_Initialize_Parameters",
+    "Next": "RequestCert"  
+      },
+  "RequestCert": {
+    "Type": "Task",
+    "Resource": "arn:aws:lambda:us-east-1:514712703977:function:S3Web_Generate_Certificate",
+    "Next": "Cert_Wait"
+      },
+  "Cert_Wait": {
+    "Type": "Task",
+    "Resource": "arn:aws:lambda:us-east-1:514712703977:function:S3Web_CertWait",
+    "Next": "Buckets_Pipeline"
+      },
+  "Buckets_Pipeline": {
+    "Type": "Task",
+    "Resource": "arn:aws:lambda:us-east-1:514712703977:function:S3Web_CreateBuckets_Pipeline",
+    "Next": "Bucket_Pipeline_Wait"
+      },
+  "Bucket_Pipeline_Wait": {
+    "Type": "Task",
+    "Resource": "arn:aws:lambda:us-east-1:514712703977:function:S3Web_Pipeline_Wait",
+    "Next": "WAF_Rules"
+      },
+  "WAF_Rules": {
+    "Type": "Task",
+    "Resource": "arn:aws:lambda:us-east-1:514712703977:function:S3Web_Create_WAF_PGESource",
+    "Next": "WAF_Wait"
+      },
+  "WAF_Wait": {
+    "Type": "Task",
+    "Resource": "arn:aws:lambda:us-east-1:514712703977:function:S3Web_WAF_Wait",
+    "Retry" : [
+      {
+        "ErrorEquals": [ "States.ALL" ],
+        "IntervalSeconds": 60,
+        "MaxAttempts": 3,
+        "BackoffRate": 2
+      }
+    ],
+    "Next": "Create_Cloudfront"
+      },
+  "Create_Cloudfront": {
+    "Type": "Task",
+    "Resource": "arn:aws:lambda:us-east-1:514712703977:function:S3Web_CloudFront",
+    "Next": "Cloudfront_Wait"
+      }, 
+  "Cloudfront_Wait": {
+    "Type": "Task",
+    "Resource": "arn:aws:lambda:us-east-1:514712703977:function:S3Web_Cloudfront_Wait",
+    "Retry" : [
+      {
+        "ErrorEquals": [ "States.ALL" ],
+        "IntervalSeconds": 60,
+        "MaxAttempts": 3,
+        "BackoffRate": 2
+      }
+    ],
+    "Next": "Create_Route53"
+      },
+  "Create_Route53": {
+    "Type": "Task",
+    "Resource": "arn:aws:lambda:us-east-1:514712703977:function:S3web-Create-Route53-CNAME",
+    "Next": "Route53_Wait"
+      },
+  "Route53_Wait": {
+    "Type": "Task",
+    "Resource": "arn:aws:lambda:us-east-1:514712703977:function:S3Web_Route53_Wait",
+    "Next": "Notify"
+      },
+  "Notify": {
+    "Type": "Task",
+    "Resource": "arn:aws:lambda:us-east-1:514712703977:function:S3Web_Notify",
+    "End": true
+      }               
+    }
+  }

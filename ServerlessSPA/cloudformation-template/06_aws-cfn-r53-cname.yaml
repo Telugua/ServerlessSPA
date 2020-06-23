@@ -1,0 +1,117 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+
+###
+### Template: aws-cfn-s3web-r53-cname.yaml
+### Author:  Billy Glenn
+###        
+###
+### Purpose:  This template creates a route53 CNAME record
+###           pointing the FQDN of target application / website
+###           to the associated Cloudfront Distribution
+###           as part of the S3 Webapp Pipeline product
+###
+### Related Templates:
+###           aws-cfn-s3web-pipeline-*.yaml: Creates S3 web hosting
+###           and CI/CD pipeline
+###           aws-cfn-cloudfront.yaml:  Creates CloudFront CDN
+###           with WAF rules
+###           aws-cfn-certificate.yaml:  Automates creation of
+###           ACM Certificate including DNS validation records
+###
+###
+
+### Metadata
+Metadata: 
+  AWS::CloudFormation::Interface:
+    ParameterGroups: 
+
+      - 
+        Label: 
+          default: "Website Details"
+        Parameters: 
+          - pWebsiteFQDN
+      -
+        Label:
+          default: "DNS Details"
+        Parameters:
+          - pPrivateHostedZoneId
+          - pDistributionDomainName
+
+
+      # -
+        # Label:
+        #   default: "Tag Details"
+        # Parameters: 
+        #   - pApplicationName
+        #   - pAppID
+        #   - pEnv
+        #   - pCFNOwnerTag
+
+          
+
+    ParameterLabels:
+
+      pWebsiteFQDN:
+        default: "Fully-Qualified Domain Name for website / application" 
+      pPrivateHostedZoneId:
+        default: "Route 53 Hosted Zone ID for the target sub-domain"
+      pDistributionDomainName:
+        default: "Cloudfront Distribution Domain Name"
+
+      # pApplicationName:
+      #   default: "Application Name"
+      # pAppID:
+      #   default: "AppID (from AMPS) in format APP-####"    
+      # pEnv:
+      #   default: "Environment"
+      # pCFNOwnerTag:
+      #   default: "CorpID of resource owner"
+
+### Parameters
+Parameters:
+
+  #Website Details
+  pWebsiteFQDN:
+    Type: 'String'
+    Description: "The Fully-Qualified Domain Name for the website/application"
+  # pWebsiteDomainName:
+  #   Type: 'String'
+  #   Description: "The Domain Name SUFFIX - e.g. ss-dev.pge.com"
+  pPrivateHostedZoneId:
+    Type: 'String'
+    Description: "The Route 53 Hosted Zone ID containing the target sub-domain (e.g. np-dev.pge.com) "
+  pDistributionDomainName:
+    Type: 'String'
+    Description: "The Cloudfront Distribution Domain Name associated with S3 Webapp Pipeline"
+
+  # #Tag Details
+  # pCFNOwnerTag:
+  #   Type: 'String'
+  #   Description: "The owner of this stack (for tagging of resources)"
+  # pEnv:
+  #   Type: 'String'
+  #   Description: "The environment: Dev, Test, QA, Prod"
+  # pApplicationName:
+  #   Type: 'String'
+  #   Description: "The 'friendly' name of the application"
+  # pAppID:
+  #   Type: 'String'
+  #   Description: "AMPS ApplicationID"
+
+
+
+Resources:
+  S3WebFQDNalias:
+    Type: AWS::Route53::RecordSet
+    Properties: 
+      Comment: CNAME for S3 Webapp Pipeline product
+      HostedZoneId: !Ref pPrivateHostedZoneId
+      Name: !Ref pWebsiteFQDN
+      ResourceRecords: 
+        - !Ref pDistributionDomainName
+      Type: CNAME
+      TTL: '60'
+
+
+

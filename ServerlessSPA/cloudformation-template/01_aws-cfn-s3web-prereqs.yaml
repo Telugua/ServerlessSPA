@@ -1,0 +1,60 @@
+
+AWSTemplateFormatVersion: 2010-09-09
+# Author:  Billy Glenn
+#
+# Initial Release: 
+# Latest Release:  05/20/2019
+
+# GitHub Repo:  https://github.com/pgetech/aws-cfn-s3web
+
+Description: 'Simple CloudFormation template to populate secrets and establish execution roles for S3 Webapp Pipeline Product'
+
+Metadata: 
+  AWS::CloudFormation::Interface:
+    ParameterGroups: 
+      - 
+        Label: 
+          default: "Secrets"
+        Parameters: 
+          - pGitHubAccessToken
+          - pAppName
+          
+
+    ParameterLabels:
+      pGitHubAccessToken:
+        default: "OAuth token granting access to target GitHub Account/Repo"
+      pAppName:
+        default: "Friendly AppName (must match Step Function JSON input value)"
+ 
+Parameters: 
+
+  pGitHubAccessToken:
+    Description: "GitHub OAuth access token"
+    Type: String
+
+  pAppName:
+    Description: "Friendly AppName"
+    Type: String
+    
+
+Resources: 
+
+  rGitHubToken:    # Stores corresponding stack input parameter as a secret in Secrets Manager
+    Type: "AWS::SecretsManager::Secret"
+    Properties:
+      Description: "GitHub access token"
+      SecretString: !Ref pGitHubAccessToken
+      Tags: 
+              - { Key: AppID, Value: "APR-2102" }
+              - { Key: Environment, Value: "PROD" }
+              - { Key: ApplicationName, Value: !Ref pAppName }
+              - { Key: Notify, Value: "bdg3@pge.com" }
+              - { Key: Order, Value: "00000000" }
+              - { Key: Org, Value: "CCOE" }
+              - { Key: Owner, Value: "dynTeam-LandingZone" }
+              - { Key: ProjectName, Value: "S3Web" }
+      Name: !Join
+              - ''
+              - - '/S3Web/'
+                - !Ref pAppName
+                - '/GithubOauthToken'

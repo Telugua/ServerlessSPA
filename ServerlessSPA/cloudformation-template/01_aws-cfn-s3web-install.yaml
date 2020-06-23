@@ -1,0 +1,128 @@
+
+AWSTemplateFormatVersion: 2010-09-09
+# Author:  Billy Glenn
+#
+# Initial Release: 
+# Latest Release:  05/20/2019
+
+# GitHub Repo:  https://github.com/pgetech/aws-cfn-s3web
+
+Description: 'Simple CloudFormation template to establish required Least Priviledge Roles for S3Web Product deployment'
+    
+
+Resources: 
+
+  S3WebStepFunctionPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: PG&E Managed Policy to grant Lambda access to Step Functions
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - lambda:*
+          Resource: "*"
+
+  S3WebLambdaPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: PG&E Managed Policy for S3 Web Lambda Functions
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - cloudformation:*
+          - ssm:PutParameter
+          - ssm:DeleteParameter
+          - ssm:GetParameterHistory
+          - ssm:GetParametersByPath
+          - ssm:GetParameters
+          - ssm:GetParameter
+          - ssm:DeleteParameters
+          - ssm:DescribeParameters
+          - ses:*
+          Resource: "*"
+
+  S3WebCloudFormationPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: PG&E Managed Policy to grant cloudformation permissions to deploy S3 Web Product
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - lambda:CreateFunction
+          - lambda:AddPermission
+          - lambda:InvokeFunction
+          - lambda:DeleteFunction
+          - lambda:RemovePermission
+          - iam:GetRole
+          - iam:DetachRolePolicy
+          - iam:DeleteRolePolicy
+          - iam:TagRole
+          - iam:CreateRole
+          - iam:DeleteRole
+          - iam:AttachRolePolicy
+          - iam:PutRolePolicy
+          - iam:GetRolePolicy
+          - waf:*
+          - ssm:PutParameter
+          - ssm:DeleteParameter
+          - ssm:AddTagsToResource
+          - cloudformation:*
+          Resource: "*"
+
+  S3WebStepFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: S3WebStepFunctionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: states.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - !Ref S3WebStepFunctionPolicy
+
+  S3WebLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: S3WebLambdaRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/SecretsManagerReadWrite
+      - arn:aws:iam::aws:policy/AWSLambdaFullAccess
+      - !Ref S3WebLambdaPolicy
+
+  S3WebCloudFormationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: S3WebCloudFormationRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: cloudformation.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      - arn:aws:iam::aws:policy/CloudFrontFullAccess
+      - arn:aws:iam::aws:policy/AWSCodePipelineFullAccess
+      - arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess
+      - arn:aws:iam::aws:policy/AmazonRoute53FullAccess
+      - arn:aws:iam::aws:policy/AWSCertificateManagerFullAccess
+      - arn:aws:iam::aws:policy/AWSLambdaFullAccess
+      - !Ref S3WebCloudFormationPolicy
+

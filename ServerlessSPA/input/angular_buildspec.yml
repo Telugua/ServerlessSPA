@@ -1,0 +1,21 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      nodejs: 10   
+    commands:
+      - echo Build started on `date`
+      - echo Instaling packages
+      - apt-get update && apt-get              
+      - npm install
+      - npm install -g @angular/cli
+  build:
+    commands:
+      - echo Building Angular Project
+      - ng build
+  post_build:
+    commands:
+      - echo Creating build artifact
+artifacts:
+  files:
+    - dist/**/*

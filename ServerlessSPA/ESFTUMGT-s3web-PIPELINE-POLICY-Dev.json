@@ -1,0 +1,55 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogStreams",
+        "s3:GetBucketAcl",
+        "s3:GetBucketLocation",
+        "s3:GetObjectVersion"
+      ],
+      "Resource": "*",
+      "Effect": "Allow"
+    },
+    {
+      "Action": [
+        "codebuild:BatchGetBuilds"
+      ],
+      "Resource": "*",
+      "Effect": "Allow"
+    },
+    {
+      "Action": [
+        "codebuild:StartBuild"
+      ],
+      "Resource": [
+        "arn:aws:codebuild:us-east-1:594908292044:project/ESFTUMGT-s3web-BUILDPROJECT-Dev",
+        "arn:aws:codebuild:us-east-1:594908292044:project/ESFTUMGT-s3web-DEPLOYPROJECT-Dev:*",
+        "arn:aws:s3:::esftumgt.np-dev.pge.com/*"
+      ],
+      "Effect": "Allow"
+    },
+    {
+      "Action": [
+        "s3:PutObject",
+        "s3:ListObjects",
+        "s3:GetObject",
+        "s3:ListBucket"
+      ],
+      "Resource": "*",
+      "Effect": "Allow"
+    },
+    {
+      "Sid": "VisualEditor1",
+      "Effect": "Allow",
+      "Action": "logs:CreateLogGroup",
+      "Resource": [
+        "arn:aws:logs:us-east-1:594908292044:log-group:/aws/codebuild/ESFTUMGT-s3web-BUILDPROJECT-Dev",
+        "arn:aws:logs:us-east-1:594908292044:log-group:/aws/codebuild/ESFTUMGT-s3web-BUILDPROJECT-Dev:*"
+      ]
+    }
+  ]
+}

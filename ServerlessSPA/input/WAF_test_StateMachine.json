@@ -1,0 +1,23 @@
+{
+    "StartAt": "WAF_Rules",
+    "States": {
+  "WAF_Rules": {
+    "Type": "Task",
+    "Resource": "arn:aws:lambda:us-east-1:514712703977:function:S3Web_Create_WAF_PGESource",
+    "Next": "WAF_Wait"
+      },
+  "WAF_Wait": {
+    "Type": "Task",
+    "Resource": "arn:aws:lambda:us-east-1:514712703977:function:S3Web_WAF_Wait",
+    "Retry" : [
+        {
+          "ErrorEquals": [ "States.ALL" ],
+          "IntervalSeconds": 60,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+    "End": true
+      }     
+    }
+  }

@@ -1,0 +1,8 @@
+AWSTemplateFormatVersion: 2010-09-09
+  Resources:
+    Macro:
+      Type: AWS::CloudFormation::Macro
+      Properties:
+        Name: !Sub '${AWS::StackName}'
+        Description: Defines appropriate BuildSpec based on BuildType input parameter
+        FunctionName: "arn:aws:lambda:us-east-1:012345678910:function:JavaMacroFunc"

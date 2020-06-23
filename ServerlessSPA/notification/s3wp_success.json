@@ -1,0 +1,8 @@
+{
+    "Template": {
+        "TemplateName": "S3Web_Success",
+        "SubjectPart": "Your S3 Webapp Pipeline for {{application_name}} - Creation Successful",
+        "TextPart": "Congratulations, {{owner}}!  Your S3 Webapp Pipeline for {{fqdn}} was successful.",
+        "HtmlPart": "Congratulations, {{owner}}!  Your S3 Webapp Pipeline for {{fqdn}} was successful."
+    }
+}

@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  pEnv:
+    Type: String
+  pSiteName:
+    Type: String
+  # pHostedZoneName:
+  #   Type: String
+  pCFNOwnerTag:
+    Type: String
+  pApplicationName:
+    Type: String
+  pCFCertificateArn:
+    Type: String
+  pRefererValue:
+    Type: String
+    NoEcho: true
+  pWebACLId:
+    Type: String
+    Default: af232f9e-e7c9-420f-a830-0fddc1cc8a3b
+    Description: 'WebACLId - this value is from new SharedServices account - please verify'
+
+Resources:
+# CloudFront Distribution
+  ## Configure the CloudFront distribution for the frontend angular/react/html app hosted in S3.
+  ## WARNING: Changes to this resource will result in an update to the CloudFront distribution. Any
+  ##           updates to CloudFront can take anywhere from 20-40 minutes before a success/failure is reported
+  ##           as the changes propagate across CloudFront.
+  rCFDistribution:
+    Type: "AWS::CloudFront::Distribution"
+    Properties:
+      DistributionConfig:
+        PriceClass: PriceClass_100
+        WebACLId: !Ref pWebACLId
+        Logging:
+          Bucket: !Sub "pge-${AWS::AccountId}-cloudfront.s3.amazonaws.com"
+          Prefix: !Ref "AWS::AccountId"
+          IncludeCookies: True
+        ViewerCertificate:
+          AcmCertificateArn: !Ref pCFCertificateArn
+          MinimumProtocolVersion: "TLSv1.2_2018"
+          SslSupportMethod: "sni-only"
+        Aliases:
+          - !Sub '${pSiteName}'
+        Comment: Distribution for the S3web+Pipeline Pattern
+        DefaultCacheBehavior:
+          TargetOriginId: !Sub 'S3-Website-${pSiteName}.s3-website-${AWS::Region}.amazonaws.com'
+          ViewerProtocolPolicy: redirect-to-https
+          ForwardedValues:
+            QueryString: false
+          MaxTTL: 3153600
+          MinTTL: 0
+          SmoothStreaming: false
+          DefaultTTL: 100
+          Compress: false
+        Enabled: true
+        Origins:
+          -
+            DomainName: !Sub '${pSiteName}.s3-website-${AWS::Region}.amazonaws.com'
+            OriginCustomHeaders:
+              - HeaderName: Referer
+                HeaderValue: !Ref pRefererValue
+            Id: !Sub 'S3-Website-${pSiteName}.s3-website-${AWS::Region}.amazonaws.com'
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginKeepaliveTimeout: 5
+              OriginProtocolPolicy: http-only
+              OriginReadTimeout: 30
+              OriginSSLProtocols:
+                - 'TLSv1'
+                - 'TLSv1.1'
+                - 'TLSv1.2'
+      Tags:
+        - Key: CFNOwner
+          Value: !Ref pCFNOwnerTag
+        - Key: ENV
+          Value: !Ref pEnv
+        - Key: AppName
+          Value: !Ref pApplicationName
+
+  DistributionIdParameter:  
+    Type: AWS::SSM::Parameter
+    Properties: 
+      Name: !Join
+        - ''
+        - - "/S3Web/"
+          - !Ref pApplicationName
+          - "/DistributionId"
+      Description:  "CloudFront Distribution Id to be used by Route53 in the S3Web Product"
+      Type: String
+      Value: !Ref rCFDistribution
+
+  DistributionDomainNameParameter:  
+    Type: AWS::SSM::Parameter
+    Properties: 
+      Name: !Join
+        - ''
+        - - "/S3Web/"
+          - !Ref pApplicationName
+          - "/DistributionDomainName"
+      Description:  "CloudFront Distribution Domain Name to be used by Route53 in the S3Web Product"
+      Type: String
+      Value: !GetAtt rCFDistribution.DomainName      
+Outputs:
+  oCFDistribution:
+    Description: 'RESOURCE - CLOUDFRONT - The CloudFront distribution for the frontend angular application'
+    Value: !Ref rCFDistribution
+
+  oCFDistributionDomainName:
+    Description: 'The CloudFront distribution domain name for the frontend angular application'
+    Value: !GetAtt rCFDistribution.DomainName

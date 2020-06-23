@@ -1,0 +1,301 @@
+---
+## AWS WAF rule set covering PG&E SourceIP addresses for WebACL
+## 
+##
+## Copyright 2018 Pacific Gas and Electric Company or its affiliates. All Rights Reserved.
+##
+## Changelog:
+## 2018-04-20 - Initial release
+## 
+## 
+##
+## Repository:
+## https://github.com/PGEDigitalCatalyst/CloudEnablement/
+##
+## Dependencies:
+## none
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS WAF PGE SourceIP Rule Set
+
+## ::PARAMETERS::
+## Template parameters to be configured by user
+Parameters:
+  stackPrefix:
+    Type: String
+    Description: The prefix to use when naming resources in this stack. Normally we would use the stack name, but since this template can be used as a resource in other stacks we want to keep the naming consistent. No symbols allowed.
+    ConstraintDescription: Alphanumeric characters only, maximum 10 characters
+    AllowedPattern: ^[a-zA-z0-9]+$
+    MaxLength: 10
+    Default: generic
+  stackScope:
+    Type: String
+    Description: You can deploy this stack at a regional level, for regional WAF targets like Application Load Balancers, or for global targets, such as Amazon CloudFront distributions.
+    AllowedValues:
+      - Global
+      - Regional
+    Default: Global
+  ruleAction:
+    Type: String
+    Description: The type of action you want to iplement for the rules in this set. Valid options are COUNT, BLOCK or ALLOW.
+    AllowedValues:
+      - BLOCK
+      - COUNT
+      - ALLOW
+    Default: ALLOW
+  
+## ::METADATA::
+## CloudFormation parameter UI definitions
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Resource Prefix
+        Parameters:
+          - stackPrefix
+      - Label:
+          default: WAF Implementation
+        Parameters:
+          - stackScope
+          - ruleAction
+    ParameterLabels:
+      stackPrefix:
+        default: Resource Name Prefix
+      stackScope:
+        default: Apply to WAF
+      ruleAction:
+        default: Rule Effect
+
+## ::CONDITIONS::
+## Determines if we're generating regional or global resources
+Conditions:
+  isRegional: !Equals [ !Ref stackScope, Regional ]
+  isGlobal: !Equals [ !Ref stackScope, Global ]
+
+## ::RESOURCES::
+## Resources used in this solution
+Resources:
+
+## PGE SourceIP Whitelist
+## Matches IP addresses that should be allowed to access content
+
+  wafrWhitelistIpSet:
+    Type: "AWS::WAFRegional::IPSet"
+    Condition: isRegional
+    Properties:
+      Name: !Join ['-', [!Ref stackPrefix, 'match-whitelisted-ips']]
+      IPSetDescriptors:
+        - Type: IPV4
+          Value: 130.19.42.250/32
+        - Type: IPV4
+          Value: 130.19.42.251/32
+        - Type: IPV4
+          Value: 130.19.42.252/32
+        - Type: IPV4
+          Value: 130.19.42.253/32
+        - Type: IPV4
+          Value: 131.89.194.0/24
+        - Type: IPV4
+          Value: 131.89.195.0/24
+        - Type: IPV4
+          Value: 131.89.196.0/24
+        - Type: IPV4
+          Value: 131.89.197.0/24
+        - Type: IPV4
+          Value: 131.89.198.0/24
+        - Type: IPV4
+          Value: 131.89.199.0/24
+        - Type: IPV4
+          Value: 131.89.200.0/24
+        - Type: IPV4
+          Value: 131.89.201.0/24
+        - Type: IPV4
+          Value: 131.89.202.0/24
+        - Type: IPV4
+          Value: 131.89.203.0/24
+        - Type: IPV4
+          Value: 131.89.204.0/24
+        - Type: IPV4
+          Value: 131.89.205.0/24
+        - Type: IPV4
+          Value: 131.89.206.0/24
+        - Type: IPV4
+          Value: 131.89.207.0/24
+        - Type: IPV4
+          Value: 131.89.208.0/24
+        - Type: IPV4
+          Value: 131.89.209.0/24
+        - Type: IPV4
+          Value: 131.89.210.0/24
+        - Type: IPV4
+          Value: 131.89.211.0/24
+        - Type: IPV4
+          Value: 131.89.212.0/24
+        - Type: IPV4
+          Value: 131.89.213.0/24
+        - Type: IPV4
+          Value: 131.89.214.0/24
+        - Type: IPV4
+          Value: 131.89.215.0/24
+        - Type: IPV4
+          Value: 131.89.216.0/24
+        - Type: IPV4
+          Value: 131.89.217.0/24
+        - Type: IPV4
+          Value: 131.89.218.0/24
+        - Type: IPV4
+          Value: 131.89.219.0/24
+        - Type: IPV4
+          Value: 131.89.220.0/24
+        - Type: IPV4
+          Value: 131.89.221.0/24
+        - Type: IPV4
+          Value: 131.89.222.0/24
+        - Type: IPV4
+          Value: 131.89.223.0/24
+  wafgWhitelistIpSet:
+    Type: "AWS::WAF::IPSet"
+    Condition: isGlobal
+    Properties:
+      Name: !Join ['-', [!Ref stackPrefix, 'match-whitelisted-ips']]
+      IPSetDescriptors:
+        - Type: IPV4
+          Value: 130.19.42.250/32
+        - Type: IPV4
+          Value: 130.19.42.251/32
+        - Type: IPV4
+          Value: 130.19.42.252/32
+        - Type: IPV4
+          Value: 130.19.42.253/32
+        - Type: IPV4
+          Value: 131.89.194.0/24
+        - Type: IPV4
+          Value: 131.89.195.0/24
+        - Type: IPV4
+          Value: 131.89.196.0/24
+        - Type: IPV4
+          Value: 131.89.197.0/24
+        - Type: IPV4
+          Value: 131.89.198.0/24
+        - Type: IPV4
+          Value: 131.89.199.0/24
+        - Type: IPV4
+          Value: 131.89.200.0/24
+        - Type: IPV4
+          Value: 131.89.201.0/24
+        - Type: IPV4
+          Value: 131.89.202.0/24
+        - Type: IPV4
+          Value: 131.89.203.0/24
+        - Type: IPV4
+          Value: 131.89.204.0/24
+        - Type: IPV4
+          Value: 131.89.205.0/24
+        - Type: IPV4
+          Value: 131.89.206.0/24
+        - Type: IPV4
+          Value: 131.89.207.0/24
+        - Type: IPV4
+          Value: 131.89.208.0/24
+        - Type: IPV4
+          Value: 131.89.209.0/24
+        - Type: IPV4
+          Value: 131.89.210.0/24
+        - Type: IPV4
+          Value: 131.89.211.0/24
+        - Type: IPV4
+          Value: 131.89.212.0/24
+        - Type: IPV4
+          Value: 131.89.213.0/24
+        - Type: IPV4
+          Value: 131.89.214.0/24
+        - Type: IPV4
+          Value: 131.89.215.0/24
+        - Type: IPV4
+          Value: 131.89.216.0/24
+        - Type: IPV4
+          Value: 131.89.217.0/24
+        - Type: IPV4
+          Value: 131.89.218.0/24
+        - Type: IPV4
+          Value: 131.89.219.0/24
+        - Type: IPV4
+          Value: 131.89.220.0/24
+        - Type: IPV4
+          Value: 131.89.221.0/24
+        - Type: IPV4
+          Value: 131.89.222.0/24
+        - Type: IPV4
+          Value: 131.89.223.0/24
+  wafrWhitelistIpRule:
+    Type: "AWS::WAFRegional::Rule"
+    Condition: isRegional
+    Properties:
+      MetricName: !Join ['', [!Ref stackPrefix, 'whitelistedips']]
+      Name: !Join ['-', [!Ref stackPrefix, 'detect-whitelisted-ips']]
+      Predicates:
+        - Type: IPMatch
+          Negated: false
+          DataId: !Ref wafrWhitelistIpSet
+  wafgWhitelistIpRule:
+    Type: "AWS::WAF::Rule"
+    Condition: isGlobal
+    Properties:
+      MetricName: !Join ['', [!Ref stackPrefix, 'whitelistedips']]
+      Name: !Join ['-', [!Ref stackPrefix, 'detect-whitelisted-ips']]
+      Predicates:
+        - Type: IPMatch
+          Negated: false
+          DataId: !Ref wafgWhitelistIpSet
+
+## --
+## WebACL containing the above rules evaluated in-order
+  wafrPGEACL:
+    Type: "AWS::WAFRegional::WebACL"
+    Condition: isRegional
+    Properties:
+      MetricName: !Join ['', [!Ref stackPrefix, 'pgeacl']]
+      Name: !Join ['-', [!Ref stackPrefix, 'pge-acl']]
+      DefaultAction:
+        Type: BLOCK
+      Rules:
+        - Action:
+            Type: !Ref ruleAction
+          Priority: 10
+          RuleId: !Ref wafrWhitelistIpRule
+
+  wafgPGEACL:
+    Type: "AWS::WAF::WebACL"
+    Condition: isGlobal
+    Properties:
+      MetricName: !Join ['', [!Ref stackPrefix, 'pgeacl']]
+      Name: !Join ['-', [!Ref stackPrefix, 'pge-acl']]
+      DefaultAction:
+        Type: BLOCK
+      Rules:
+        - Action:
+            Type: !Ref ruleAction
+          Priority: 10
+          RuleId: !Ref wafgWhitelistIpRule
+          
+  WAFWebACLParameter:  
+    Type: AWS::SSM::Parameter
+    Properties: 
+      Name: !Join
+        - ''
+        - - "/S3Web/"
+          - !Ref stackPrefix
+          - "/WafGlobalWebAcl"
+      Description:  "WAF WebACLId for use by S3 Web Product"
+      Type: String
+      Value: !Ref wafgPGEACL  
+
+## ::OUTPUTS::
+## Outputs useful in other templates
+Outputs:
+  wafWebACL:
+    Value: !If [ isRegional, !Ref wafrPGEACL, !Ref wafgPGEACL ]
+  wafWebACLMetric:
+    Value: !Join ['', [!Ref stackPrefix, 'pgeacl']]
+  wafIpWhitelist:
+    Value: !If [ isRegional, !Ref wafrWhitelistIpSet, !Ref wafgWhitelistIpSet ]

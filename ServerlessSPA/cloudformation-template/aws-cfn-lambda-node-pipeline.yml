@@ -1,0 +1,345 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+  rPipelineBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Ref pPipelineBucketName
+      Tags:
+        - Key: CFNOwner
+          Value: !Ref pCFNOwnerTag
+        - Key: ENV
+          Value: !Ref pEnv
+        - Key: AppName
+          Value: !Ref pApplicationName
+  # Endpoint Pipeline Configuration (Lambda)
+  rPipeline:
+    Type: "AWS::CodePipeline::Pipeline"
+    Properties:
+      Name: !Sub '${AWS::StackName}-PIPELINE-${pEnv}'
+      RoleArn: !GetAtt rPipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: 
+          Ref: rPipelineBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: SourceAction
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              OutputArtifacts:
+                - Name: SourceOuput
+              Configuration:
+                Owner: !Ref pGitHubAccount
+                Repo: !Ref pGitHubRepo
+                PollForSourceChanges: 'true'
+                Branch: !Ref pGitHubRepoBranch
+                OAuthToken: !Ref pGitHubToken
+              RunOrder: 1
+        - Name: BuildDeploy
+          Actions:
+            - Name: CodeBuild
+              InputArtifacts:
+                - Name: SourceOuput
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              OutputArtifacts:
+                - Name: BuildOutput
+              Configuration:
+                ProjectName: 
+                  Ref: rBuildProject
+              RunOrder: 1
+  rPipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-PIPELINE-ROLE-${pEnv}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal: {Service: [codepipeline.amazonaws.com]}
+          Action: ['sts:AssumeRole']
+      Policies:
+      - PolicyName: !Sub '${AWS::StackName}-PIPELINE-POLICY-${pEnv}'
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'logs:CreateLogGroup'
+                - 'logs:CreateLogStream'
+                - 'logs:PutLogEvents'
+                - 'logs:DescribeLogStreams'
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - 'codebuild:BatchGetBuilds'
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - 'codebuild:StartBuild'
+              Resource: 
+                - !GetAtt rBuildProject.Arn
+            - Effect: Allow
+              Action: 
+                - 's3:PutObject'
+                - 's3:ListObjects'
+                - 's3:GetObject'
+                - 's3:ListBucket'
+              Resource:
+                - !GetAtt rPipelineBucket.Arn
+                - !Join
+                  - ''
+                  - - !GetAtt rPipelineBucket.Arn
+                    - '/*'
+              Resource: '*'
+  rBuildProject:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Name: !Sub '${AWS::StackName}-BUILDPROJECT-${pEnv}'
+      ServiceRole: !Ref rBuildProjectRole
+      BadgeEnabled: 'false'
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        PrivilegedMode: 'false'
+        Image: aws/codebuild/nodejs:6.3.1
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: !Sub |
+          version: 0.2
+          phases:
+            build:
+              commands:
+                - echo Build started on `date`
+                - ls -la
+                - npm install
+                - rm -rf .gitignore
+                - zip -r deploy.zip *
+                - aws lambda update-function-code --function-name ${rLambdaFunction} --zip-file fileb://deploy.zip --region ${AWS::Region}
+            post_build:
+              commands:
+                - echo Build completed on `date`
+      TimeoutInMinutes: 10
+      Cache:
+        Type: NO_CACHE
+      Tags:
+        - Key: CFNOwner
+          Value: !Ref pCFNOwnerTag
+        - Key: ENV
+          Value: !Ref pEnv
+        - Key: AppName
+          Value: !Ref pApplicationName
+  rBuildProjectRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-BUILDPROJECT-ROLE-${pEnv}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal: {Service: [codebuild.amazonaws.com]}
+          Action: ['sts:AssumeRole']
+      Policies:
+      - PolicyName: !Sub '${AWS::StackName}-BUILDPROJECT-POLICY-${pEnv}'
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'logs:CreateLogGroup'
+                - 'logs:CreateLogStream'
+                - 'logs:PutLogEvents'
+                - 'logs:DescribeLogStreams'
+              Resource: '*'
+            - Effect: Allow
+              Action: 
+                - 's3:PutObject'
+                - 's3:ListObjects'
+                - 's3:GetObject'
+                - 's3:ListBucket'
+              Resource:
+                - !GetAtt rPipelineBucket.Arn
+                - !Join
+                  - ''
+                  - - !GetAtt rPipelineBucket.Arn
+                    - '/*'
+            - Effect: Allow
+              Action: 
+                - 'lambda:UpdateFunctionCode'
+              Resource:
+                - !GetAtt rLambdaFunction.Arn
+  
+  # Lambda Configuration 
+  rLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-LAMBDA-${pEnv}'
+      Timeout: 10
+      Runtime: nodejs6.10
+      Handler: index.handler
+      Role: !GetAtt rLambdaFunctionRole.Arn
+      Environment: 
+        Variables:
+          ENV: !Ref pEnv
+      Tags:
+        - Key: CFNOwner
+          Value: !Ref pCFNOwnerTag
+        - Key: ENV
+          Value: !Ref pEnv
+        - Key: AppName
+          Value: !Ref pApplicationName
+      Code:
+        ZipFile: !Sub |
+          exports.handler = (event, context, callback) => {
+          
+            // TODO implement
+            
+            callback(null, 'Hello from Lambda');
+            
+          };
+  rLambdaFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-LAMBDA-ROLE-${pEnv}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal: {Service: [lambda.amazonaws.com]}
+          Action: ['sts:AssumeRole']
+      Policies:
+      - PolicyName: !Sub '${AWS::StackName}-LAMBDA-POLICY-${pEnv}'
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'logs:CreateLogGroup'
+                - 'logs:CreateLogStream'
+                - 'logs:PutLogEvents'
+                - 'logs:DescribeLogStreams'
+              Resource: '*'
+  # API Gateway Configuration 
+  ## Configure the REST API 
+  rRestApi:
+    Type: "AWS::ApiGateway::RestApi"
+    Properties:
+      ApiKeySourceType: HEADER
+      EndpointConfiguration:
+        Types:
+          - EDGE
+      Name: !Sub '${AWS::StackName}'
+  ## Create a new stage for the API
+  rApiStage:
+    Type: "AWS::ApiGateway::Stage"
+    Properties:
+      CacheClusterEnabled: false
+      StageName: !Sub '${pEnv}'
+      RestApiId: !Ref rRestApi
+      DeploymentId: !Ref rApiDeployment
+      MethodSettings:
+        - CacheDataEncrypted: false
+          CacheTtlInSeconds: 300
+          CachingEnabled: false
+          DataTraceEnabled: true
+          HttpMethod: "*"
+          LoggingLevel: "INFO"
+          MetricsEnabled: false
+          ThrottlingBurstLimit: 5000
+          ThrottlingRateLimit: 10000.0
+          ResourcePath: "/*"
+      Variables:
+        ENV: !Sub '${pEnv}'
+  ## Create a deployment 
+  ### This depends on at least one method/resource having already been created, so we are picking a random API from this template as a dependency. 
+  rApiDeployment:
+    Type: "AWS::ApiGateway::Deployment"
+    DependsOn: rApiGETMethod
+    Properties:
+      RestApiId: !Ref rRestApi
+  rAPIGatewayLambdaPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref rLambdaFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 
+        - 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestApiId}/*/*/*'
+        - { RestApiId : !Ref rRestApi }
+  rApiResource:
+    Type: "AWS::ApiGateway::Resource"
+    Properties:
+      ParentId: !GetAtt rRestApi.RootResourceId
+      PathPart: !Ref pApplicationName
+      RestApiId: !Ref rRestApi
+  rApiGETMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      HttpMethod: GET 
+      Integration:
+        IntegrationResponses:
+          -
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            StatusCode: 200
+        PassthroughBehavior: WHEN_NO_TEMPLATES
+        IntegrationHttpMethod: POST
+        ContentHandling: CONVERT_TO_TEXT
+        RequestTemplates:
+          application/json: "{\r\n  \"body\" : $input.json('$'),\r\n  \"headers\": {\r\n    #foreach($header in $input.params().header.keySet())\r\n    \"$header\": \"$util.escapeJavaScript($input.params().header.get($header))\" #if($foreach.hasNext),#end\r\n \r\n    #end\r\n  },\r\n  \"method\": \"$context.httpMethod\",\r\n  \"params\": {\r\n    #foreach($param in $input.params().path.keySet())\r\n    \"$param\": \"$util.escapeJavaScript($input.params().path.get($param))\" #if($foreach.hasNext),#end\r\n \r\n    #end\r\n  },\r\n  \"query\": {\r\n    #foreach($queryParam in $input.params().querystring.keySet())\r\n    \"$queryParam\": \"$util.escapeJavaScript($input.params().querystring.get($queryParam))\" #if($foreach.hasNext),#end\r\n \r\n    #end\r\n  }\r\n}"
+        Type: AWS
+        Uri: !Sub 
+          - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaARN}/invocations'
+          - { lambdaARN : !GetAtt rLambdaFunction.Arn }
+      MethodResponses:
+        - ResponseModels:
+            application/json: Empty
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+          StatusCode: 200
+      ResourceId: !Ref rApiResource
+      RestApiId: !Ref rRestApi
+          
+Parameters:
+  pGitHubToken:
+    Type: 'String'
+    Description: "Enter the GitHub Token"
+    NoEcho: true
+  pGitHubAccount:
+    Type: 'String'
+    Description: "Enter the GitHub Account Name (e.g. PGEDigitalCatalyst)"
+  pGitHubRepo:
+    Type: 'String'
+    Description: "Enter the GitHub Repo Name"
+  pGitHubRepoBranch:
+    Type: 'String'
+    Default: 'dev'
+    Description: "Enter the Branch you wish to pull from in the GitHub repo"
+  pPipelineBucketName:
+    Type: 'String'
+    Description: "The name of the S3 bucket that will contain the pipeline artifacts"
+  pCFNOwnerTag:
+    Type: 'String'
+    Description: "The owner of this stack (for tagging of resources)"
+  pEnv:
+    Type: 'String'
+    Description: "The environment"
+    AllowedValues:
+      - 'PROD'
+      - 'QA'
+      - 'TEST'
+  pApplicationName:
+    Type: 'String'
+    Description: "The name of the application"

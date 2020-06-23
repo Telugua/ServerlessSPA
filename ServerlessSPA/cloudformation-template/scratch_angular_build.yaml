@@ -1,0 +1,86 @@
+  rBuildProject:
+    Type: "AWS::CodeBuild::Project"
+    Condition: AngularBuild
+    Properties:
+      Name: !Sub '${AWS::StackName}-BUILDPROJECT-${pEnv}'
+      ServiceRole: !Ref rBuildProjectRole
+      BadgeEnabled: 'false'
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        PrivilegedMode: 'false'
+        Image: aws/codebuild/standard:2.0
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: !Sub |
+            version: 0.2
+            phases:
+              install:
+                runtime-versions:
+                  nodejs: 10   
+                commands:
+                  - echo Build started on `date`
+                  - echo Instaling packages
+                  - apt-get update && apt-get              
+                  - npm install
+                  - npm install -g @angular/cli
+              build:
+                commands:
+                  - echo Building Angular Project
+                  - ng build
+              post_build:
+                commands:
+                  - echo Creating build artifact
+            artifacts:
+              files:
+                - dist/**/*
+      TimeoutInMinutes: 10
+      Cache:
+        Type: NO_CACHE
+      Tags:
+        - Key: CFNOwner
+          Value: !Ref pCFNOwnerTag
+        - Key: ENV
+          Value: !Ref pEnv
+        - Key: AppName
+          Value: !Ref pApplicationName
+
+  rDeployProject:
+    Type: "AWS::CodeBuild::Project"
+    Condition: AngularBuild
+    Properties:
+      Name: !Sub '${AWS::StackName}-DEPLOYPROJECT-${pEnv}'
+      ServiceRole: !Ref rDeployProjectRole
+      BadgeEnabled: 'false'
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        PrivilegedMode: 'false'
+        Image: aws/codebuild/standard:2.0
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: !Sub |
+            version: 0.2
+            phases:
+              install:
+                runtime-versions:
+                  nodejs: 10               
+              build:
+                commands:
+                  - echo Transferring files to S3
+                  - aws s3 cp dist/ s3://${rWebsiteBucket}/ --recursive --region ${AWS::Region}
+                  - echo Build completed on `date`
+      TimeoutInMinutes: 10
+      Cache:
+        Type: NO_CACHE
+      Tags:
+        - Key: CFNOwner
+          Value: !Ref pCFNOwnerTag
+        - Key: ENV
+          Value: !Ref pEnv
+        - Key: AppName
+          Value: !Ref pApplicationName

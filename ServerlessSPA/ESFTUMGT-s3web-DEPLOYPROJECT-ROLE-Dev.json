@@ -1,0 +1,38 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogStreams"
+      ],
+      "Resource": "*",
+      "Effect": "Allow"
+    },
+    {
+      "Action": [
+        "s3:PutObject",
+        "s3:ListObjects",
+        "s3:GetObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::esftumgt.np-dev.pge.com-artifacts",
+        "arn:aws:s3:::esftumgt.np-dev.pge.com-artifacts/*"
+      ],
+      "Effect": "Allow"
+    },
+    {
+      "Action": [
+        "s3:PutObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::esftumgt.np-dev.pge.com",
+        "arn:aws:s3:::esftumgt.np-dev.pge.com/*"
+      ],
+      "Effect": "Allow"
+    }
+  ]
+}

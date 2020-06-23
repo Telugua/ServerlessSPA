@@ -1,0 +1,14 @@
+{
+    "pCertificateSubject": "sampleapp.np-dev.pge.com",
+    "pCFNOwner": "bdg3",
+    "pAppId": "APP-2102",
+    "pAppName": "SampleApp",
+    "pBuildSpec": "html",
+    "pEnv": "Dev",
+    "pRoute53AssumedRoleArn": "arn:aws:iam::514712703977:role/Route53HostedZoneEditRole-HostedZoneEditRole-XJSBAU6W9JX5",
+    "pRoute53PublicHostedZoneId": "Z2CIYDT0115AMW",
+    "pRoute53PrivateHostedZoneId": "ZYLP356ZEZQ4M",
+    "pGitHubAccount": "pgetech",
+    "pGitHubRepo": "static-html-website",
+    "pGitHubRepoBranch": "master"
+}    
