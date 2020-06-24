@@ -5,7 +5,7 @@ pipeline {
             steps {
                 sh 'checkout scm'
             }
-        
+        }
 
          stage ('Build'){
        parallel {
@@ -31,4 +31,4 @@ pipeline {
          }
     }
 }
-}
+
