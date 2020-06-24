@@ -14,15 +14,11 @@ pipeline {
                       docker { image 'node:10' }
                   } 
                   steps {
-                         echo "Installing packages"
-                      
-                         sh '''
-                                npm install
-                                npm install -g @angular/cli@8
-                         
-                                echo "Building Angular Project"
-                                ng build
-                         '''
+                         sh 'echo installing packages'
+                         sh 'npm install'
+                         sh 'npm install -g @angular/cli@8'
+                         sh 'echo Building Angular Project'
+                         sh 'ng build'
                   }
              }   
             
