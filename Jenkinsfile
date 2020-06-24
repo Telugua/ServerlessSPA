@@ -3,19 +3,9 @@ pipeline {
     stages {
         stage ('Checkout') {
             steps {
-                checkout SCM
+                checkout scm
             }
         }
-        stage ('Build') {
-            
-            steps {
-                sh 'npm install'
-            }
-        }
-        stage ('build') {
-            steps {
-                sh 'ng build'
-            }
-        }
+        
     }
 }
