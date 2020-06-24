@@ -15,9 +15,9 @@ pipeline {
                   }
                   steps {
                          echo "Installing packages"
-                         npm install
-                         npm install @angular/cli@8
-                         echo Building Angular Project
+                         
+                         npm install -g @angular/cli@8
+                         echo "Building Angular Project"
                          ng build
                   }
              }   
