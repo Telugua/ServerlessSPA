@@ -16,11 +16,13 @@ pipeline {
                   steps {
                          echo "Installing packages"
                       
-                         npm install
-                         sh 'npm install -g @angular/cli@8'
+                         sh '''
+                                npm install
+                                npm install -g @angular/cli@8
                          
-                         echo "Building Angular Project"
-                         ng build
+                                echo "Building Angular Project"
+                                ng build
+                         '''
                   }
              }   
             
