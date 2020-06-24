@@ -10,9 +10,9 @@ pipeline {
          stage ('Build'){
        parallel {
              stage("Angular Build") {
-                  /* agent {
+                  agent {
                       docker { image 'node:10' }
-                  } */
+                  } 
                   steps {
                          echo "Installing packages"
                       
