@@ -11,7 +11,7 @@ pipeline {
        parallel {
              stage("Angular Build") {
                   agent {
-                      docker { image 'node:10' }
+                      container { 'node:latest' }
                   }
                   steps {
                          echo "Installing packages"
